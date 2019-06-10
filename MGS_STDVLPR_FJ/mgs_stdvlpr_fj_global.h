@@ -1,0 +1,12 @@
+#ifndef MGS_STDVLPR_FJ_GLOBAL_H
+#define MGS_STDVLPR_FJ_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(MGS_STDVLPR_FJ_LIBRARY)
+#  define MGS_STDVLPR_FJSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define MGS_STDVLPR_FJSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // MGS_STDVLPR_FJ_GLOBAL_H
