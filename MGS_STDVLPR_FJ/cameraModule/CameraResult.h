@@ -53,6 +53,11 @@
 #define  COLOR_YELLOW_GREEN 5
 #define  COLOR_BLUE_WHITE 6
 #define  COLOR_RED 7
+#define  COLOR_GREEN 8
+#define  COLOR_GREY 10
+#define  COLOR_PINK 11
+#define  COLOR_PUEPLE 12
+#define  COLOR_BROWN 13
 
 //车牌颜色类型
 #define  PLATE_TYPE_NONE 0      //0-无类型
@@ -74,6 +79,12 @@
 #define  PLATE_TYPE_MOTORCYCLE 16      //16-摩托车
 #define  PLATE_TYPE_NEW_ENERGY 17      //17-新能源
 
+#define CAR_BODY_LIGHTCOLOR 0       //浅色
+#define CAR_BODY_DARKCOLOR 1        //深色
+
+
+#define CAR_FRONT_MODE 0        //车头
+#define CAR_TAIL_MODE 1       //车尾
 
 class CameraIMG
 {
@@ -114,6 +125,7 @@ public:
     int iSpeed;
     int iResultNo;
     int iVehTypeNo;		//车型代码
+    int iVehClassType;      //车辆类型编号 1-客车，2-货车，3-牵引车，4-专项作业车    //5-电车，6-摩托车，7-三轮汽车，8-拖拉机    //9-轮式机械，10-全挂车，11-半挂车，0-其他
     int iVehSizeType;       //车型大小代码
     int iVehBodyColorNo;
     int iVehBodyDeepNo;
@@ -129,6 +141,7 @@ public:
     int iReliability;       //可信度
 
     bool bBackUpVeh;		//是否倒车
+    bool bFrontMode;		//车头模式
 
     char chDeviceIp[64];
     char chServerIP[64];

@@ -14,7 +14,7 @@
 #define INI_FILE_H_
 
 #define INI_FILE_NAME "vpr_fj.ini"
-#define DLL_VERSION "2019060601"
+#define DLL_VERSION "2019061001"
 
 #ifdef __cplusplus
 extern "C"

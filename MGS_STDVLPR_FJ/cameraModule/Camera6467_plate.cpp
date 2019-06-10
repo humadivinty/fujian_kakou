@@ -22,7 +22,8 @@ if (arg == NULL) \
 
 Camera6467_plate::Camera6467_plate() :
 BaseCamera(),
-m_iTimeInvl(3),
+m_iTimeInvl(10),
+m_iSynTimInterval(30),
 m_iCompressBigImgSize(COMPRESS_BIG_IMG_SIZE),
 m_iCompressSamllImgSize(COMPRESS_PLATE_IMG_SIZE),
 m_pTempBin(NULL),
@@ -124,6 +125,128 @@ int Camera6467_plate::AnalysisVelchType(const char* vehType)
     }
 }
 
+bool Camera6467_plate::AnalysisVelchBodyColor(const char *srcData, int &ColorShade, int &bodyColor)
+{
+    if(srcData == NULL)
+    {
+        WriteFormatLog("AnalysisiVelchBodyColor:: the source data is NULL. ");
+        return false;
+    }
+    if(strstr(srcData, "Éî"))
+    {
+        ColorShade = CAR_BODY_DARKCOLOR;
+    }
+    else
+    {
+        ColorShade = CAR_BODY_LIGHTCOLOR;
+    }
+
+    if (strstr(srcData, "À¶"))
+    {
+        bodyColor = COLOR_BLUE;
+    }
+    else if (strstr(srcData, "»Æ"))
+    {
+        bodyColor = COLOR_YELLOW;
+    }
+    else if (strstr(srcData, "ºÚ"))
+    {
+        bodyColor = COLOR_BLACK;
+    }
+    else if (strstr(srcData, "ÂÌ"))
+    {
+        bodyColor = COLOR_GREEN;
+    }
+    else if (strstr(srcData, "°×"))
+    {
+        bodyColor = COLOR_WHITE;
+    }
+    else if (strstr(srcData, "ºì"))
+    {
+        bodyColor = COLOR_RED;
+    }
+    else if (strstr(srcData, "»Ò"))
+    {
+        bodyColor = COLOR_GREY;
+    }
+    else if (strstr(srcData, "·Û"))
+    {
+        bodyColor = COLOR_PINK;
+    }
+    else if (strstr(srcData, "×Ï"))
+    {
+        bodyColor = COLOR_PUEPLE;
+    }
+    else if (strstr(srcData, "×Ø"))
+    {
+        bodyColor = COLOR_BROWN;
+    }
+    else
+    {
+        bodyColor = COLOR_UNKNOW;
+    }
+    return true;
+}
+
+int Camera6467_plate::AnalysisFrontMode(const char *srcData)
+{
+    if(srcData == NULL)
+    {
+        return CAR_FRONT_MODE;
+    }
+    else
+    {
+        if(strstr(srcData, "Í·"))
+        {
+            return CAR_FRONT_MODE;
+        }
+        else
+        {
+            return CAR_TAIL_MODE;
+        }
+    }
+}
+
+int Camera6467_plate::AnalysisPlateColorType(const char *srcData)
+{
+    if(srcData == NULL)
+    {
+        return 0;       //orther
+    }
+    else
+    {
+        if(strstr(srcData, "»Æ"))
+        {
+            return 1;   //Black on yellow background
+        }
+        else if(strstr(srcData, "À¶"))
+        {
+            return 2;   //Blue on white background
+        }
+        else if(strstr(srcData, "ºÚ"))
+        {
+            return 3;   //white on black background
+        }
+        else if(strstr(srcData, "Ê¹")
+                || strstr(srcData, "Áì") )
+        {
+            return 4;   //red on black background
+        }
+        else if(strstr(srcData, "°×"))
+        {
+            return 6;   //red on white background
+        }
+        else if(strstr(srcData, "¾¯"))
+        {
+            return 5;   //red on white background
+        }
+        else
+        {
+            return 0;       //orther
+        }
+    }
+}
+
 void Camera6467_plate::ReadConfig()
 {
     char szPath[MAX_PATH] = {0};
@@ -171,12 +294,19 @@ void Camera6467_plate::SendResultByCallback()
     m_csFuncCallback.lock();
     if(m_pResultCallbackFunc != NULL)
     {
-        WriteFormatLog("SendResultByCallback:: begin to send result by callback func, userData = %p.", m_pResultUserData);
+        m_csFuncCallback.unlock();
+        WriteFormatLog("SendResultByCallback:: prepare to send result by callback func, userData = %p, Plate number = %s, time = %s.",
+                       m_pResultUserData,
+                       m_BufferResult->chPlateNO,
+                       m_BufferResult->chPlateTime);
         mgs_stdvlpr_info resultInfo;
+
         resultInfo.nPlaceNo = m_BufferResult->iLaneNo;
         strcpy(resultInfo.time, m_BufferResult->chPlateTime);
-        resultInfo.nIsTail = 0;
+        resultInfo.nIsTail = m_BufferResult->bFrontMode ? 0 : 1;
         resultInfo.vehType = m_BufferResult->iVehTypeNo;
+
+        WriteFormatLog("SendResultByCallback::analysisPlateColot");
         switch(m_BufferResult->iPlateColor)
         {
         case COLOR_BLUE:
@@ -203,6 +333,9 @@ void Camera6467_plate::SendResultByCallback()
         case COLOR_UNKNOW:
             memcpy(resultInfo.plateColor,"09", 2 );
             break;
+        case COLOR_GREEN:
+            memcpy(resultInfo.plateColor,"11", 2 );
+            break;
         case COLOR_RED:
             memcpy(resultInfo.plateColor,"12", 2 );
             break;
@@ -210,6 +343,7 @@ void Camera6467_plate::SendResultByCallback()
             memcpy(resultInfo.plateColor,"09", 2 );
             break;
         }
+        WriteFormatLog("SendResultByCallback:: get the plate number.");
         if(strstr(m_BufferResult->chPlateNO, "ÎÞ"))
         {
             memcpy(resultInfo.plateText, "Ä¬A00000\0", strlen("Ä¬A00000\0")+1);
@@ -218,10 +352,12 @@ void Camera6467_plate::SendResultByCallback()
         {
             memcpy(resultInfo.plateText, m_BufferResult->chPlateNO+2, strlen(m_BufferResult->chPlateNO+2)+1);
         }
-        resultInfo.reliability = m_BufferResult->fConfidenceLevel*10000;
 
-        resultInfo.imageLength[0] = m_BufferResult->CIMG_BestSnapshot.dwImgSize;
-        resultInfo.image[0] = m_BufferResult->CIMG_BestSnapshot.pbImgData;
+        resultInfo.reliability = m_BufferResult->fConfidenceLevel*10000;
+        WriteFormatLog("SendResultByCallback::  get the image.");
+
+        resultInfo.imageLength[0] = m_BufferResult->CIMG_LastSnapshot.dwImgSize;
+        resultInfo.image[0] = m_BufferResult->CIMG_LastSnapshot.pbImgData;
 
         resultInfo.imageLength[1] = m_BufferResult->CIMG_PlateImage.dwImgSize;
         resultInfo.image[1] = m_BufferResult->CIMG_PlateImage.pbImgData;
@@ -230,22 +366,66 @@ void Camera6467_plate::SendResultByCallback()
         resultInfo.image[2] = m_BufferResult->CIMG_BinImage.pbImgData;
 
         resultInfo.vehSpeed = m_BufferResult->iSpeed;
-        resultInfo.vehBodyColorNo = m_BufferResult->iVehBodyColorNo;
+
+        WriteFormatLog("SendResultByCallback::  analysis body color.");
+        switch(m_BufferResult->iVehBodyColorNo)
+        {
+        case COLOR_BLUE:
+            resultInfo.vehBodyColorNo = 8;
+            break;
+        case COLOR_YELLOW:
+            resultInfo.vehBodyColorNo =3;
+            break;
+        case COLOR_BLACK:
+            resultInfo.vehBodyColorNo = 10;
+            break;
+        case COLOR_WHITE:
+            resultInfo.vehBodyColorNo = 1;
+            break;
+        case COLOR_RED:
+            resultInfo.vehBodyColorNo = 5;
+            break;
+        case COLOR_GREEN:
+            resultInfo.vehBodyColorNo = 7;
+            break;
+        case COLOR_GREY:
+            resultInfo.vehBodyColorNo = 2;
+            break;
+        case COLOR_PINK:
+            resultInfo.vehBodyColorNo = 4;
+            break;
+        case COLOR_PUEPLE:
+            resultInfo.vehBodyColorNo = 6;
+            break;
+        case COLOR_BROWN:
+            resultInfo.vehBodyColorNo = 9;
+            break;
+        case COLOR_UNKNOW:
+            resultInfo.vehBodyColorNo = 0;
+            break;
+        default:
+            resultInfo.vehBodyColorNo = 8;
+            break;
+        }
         resultInfo.vehBodyDeepNo = m_BufferResult->iVehBodyDeepNo;
-        resultInfo.vehClassTypeNo = 0;
-        resultInfo.plateTypeNo = 0;
-        sprintf(resultInfo.szCarBrand," ");
+        resultInfo.vehClassTypeNo = m_BufferResult->iVehClassType;
+        resultInfo.plateTypeNo = m_BufferResult->iPlateTypeNo;
+
+        WriteFormatLog("SendResultByCallback::  get the car brand info.");
+        sprintf(resultInfo.szCarBrand,m_BufferResult->chCarFace);
         sprintf(resultInfo.reserved," ");
 
+        WriteFormatLog("SendResultByCallback:: begin to call Function.");
         (fStdVLPRRegResultCallback(m_pResultCallbackFunc))(GetLoginID(),& resultInfo, m_pResultUserData);
 
          WriteFormatLog("SendResultByCallback:: finish  sending result by callback func, userData = %p.", m_pResultUserData);
     }
     else
     {
+        m_csFuncCallback.unlock();
         WriteFormatLog("SendResultByCallback:: result call back func is null.");
     }
-    m_csFuncCallback.unlock();
+
 }
 
 int Camera6467_plate::RecordInfoBegin(unsigned long dwCarID)
@@ -765,7 +945,7 @@ void Camera6467_plate::SendConnetStateMsg(bool isConnect)
         m_csFuncCallback.lock();
         if (m_pStatusCallbackFunc)
         {
-            m_csFuncCallback.lock();
+            m_csFuncCallback.unlock();
             //char chIP[32] = { 0 };
             //sprintf_s(chIP, "%s", m_strIP.c_str());
             //g_ConnectStatusCallback(m_iIndex, 0, g_pUser);
@@ -773,7 +953,7 @@ void Camera6467_plate::SendConnetStateMsg(bool isConnect)
         }
         else
         {
-            m_csFuncCallback.lock();
+            m_csFuncCallback.unlock();
         }
 
 //        EnterCriticalSection(&m_csFuncCallback);
@@ -785,7 +965,7 @@ void Camera6467_plate::SendConnetStateMsg(bool isConnect)
         m_csFuncCallback.lock();
         if (m_pStatusCallbackFunc)
         {
-            m_csFuncCallback.lock();
+            m_csFuncCallback.unlock();
             //char chIP[32] = { 0 };
             //sprintf_s(chIP, "%s", m_strIP.c_str());
             //g_ConnectStatusCallback(m_iIndex, 0, g_pUser);
@@ -793,7 +973,7 @@ void Camera6467_plate::SendConnetStateMsg(bool isConnect)
         }
         else
         {
-            m_csFuncCallback.lock();
+            m_csFuncCallback.unlock();
         }
 
 //        EnterCriticalSection(&m_csFuncCallback);
@@ -900,14 +1080,22 @@ void Camera6467_plate::AnalysisAppendInfo( CameraResult* pResult )
        time_t          timeSecond = pResult->dw64TimeMS / 1000;  // Seconds
        timeNow = localtime(&timeSecond);
 
-       sprintf(pResult->chPlateTime, "%04d-%02d-%02d %02d:%02d:%02d:%03d",
-           timeNow->tm_year,
-           timeNow->tm_mon,
-           timeNow->tm_yday,
+       sprintf(pResult->chPlateTime, "%04d%02d%02d%02d%02d%02d",
+           timeNow->tm_year+1900,
+           timeNow->tm_mon+1,
+           timeNow->tm_mday,
            timeNow->tm_hour,
            timeNow->tm_min,
-           timeNow->tm_sec,
-           pResult->dw64TimeMS%1000);
+           timeNow->tm_sec);
+
+//       sprintf(pResult->chPlateTime, "%04d-%02d-%02d %02d:%02d:%02d:%03d",
+//           timeNow->tm_year,
+//           timeNow->tm_mon,
+//           timeNow->tm_yday,
+//           timeNow->tm_hour,
+//           timeNow->tm_min,
+//           timeNow->tm_sec,
+//           pResult->dw64TimeMS%1000);
     }
     else
     {
@@ -915,17 +1103,27 @@ void Camera6467_plate::AnalysisAppendInfo( CameraResult* pResult )
         long iTimeInMilliseconds = 0;
         Tool_GetTime(&timeNow, &iTimeInMilliseconds);
 
-        sprintf(pResult->chPlateTime, "%04d-%02d-%02d %02d:%02d:%02d:%03d",
+        sprintf(pResult->chPlateTime, "%04d%02d%02d%02d%02d%02d",
             timeNow.tm_year+1900,
             timeNow.tm_mon+1,
             timeNow.tm_mday,
             timeNow.tm_hour,
             timeNow.tm_min,
-            timeNow.tm_sec,
-            iTimeInMilliseconds%1000);
+            timeNow.tm_sec);
+
+//        sprintf(pResult->chPlateTime, "%04d-%02d-%02d %02d:%02d:%02d:%03d",
+//            timeNow.tm_year+1900,
+//            timeNow.tm_mon+1,
+//            timeNow.tm_mday,
+//            timeNow.tm_hour,
+//            timeNow.tm_min,
+//            timeNow.tm_sec,
+//            iTimeInMilliseconds%1000);
     }
+    WriteFormatLog("get the plate time: %s.",pResult->chPlateTime );
 
 	pResult->iPlateColor = Tool_AnalysisPlateColorNo(pResult->chPlateNO);
+    pResult->iPlateTypeNo = AnalysisPlateColorType(pResult->chPlateNO);
 
 	int iVehicleType = 0;
 	int iVehicleClass = 0;
@@ -998,9 +1196,71 @@ void Camera6467_plate::AnalysisAppendInfo( CameraResult* pResult )
     if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "VehicleType", chBuffer, &iBufLenght ))
 	{
 		int iVehType =  AnalysisVelchType(chBuffer);
-		pResult->iVehTypeNo = iVehType  >= 10 ? 2 : 1;
-		pResult->iVehSizeType = iVehType %10;
+        pResult->iVehTypeNo = iVehType;
     }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "Confidence", chBuffer, &iBufLenght ))
+    {
+        float fConfidence = 0.0;
+        sscanf(chBuffer,"%f", &fConfidence);
+        pResult->fConfidenceLevel = fConfidence;
+    }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "CarColor", chBuffer, &iBufLenght ))
+    {
+        AnalysisVelchBodyColor(chBuffer, pResult->iVehBodyDeepNo, pResult->iVehBodyColorNo);
+    }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "RoadNumber", chBuffer, &iBufLenght ))
+    {
+        int iLaneNo =  0;
+        sscanf(chBuffer,"%d", &iLaneNo);
+        pResult->iLaneNo = iLaneNo;
+    }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "FrontScene", chBuffer, &iBufLenght ))
+    {
+        pResult->bFrontMode = (AnalysisFrontMode(chBuffer) == 0 ) ? true : false;
+    }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "VideoScaleSpeed", chBuffer, &iBufLenght ))
+    {
+        int iSpeed =  0;
+        sscanf(chBuffer,"%d", &iSpeed);
+        pResult->iSpeed = iSpeed;
+    }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "StructBrand", chBuffer, &iBufLenght ))
+    {
+        sprintf(pResult->chCarFace, "%s", chBuffer);
+    }
+
+    memset(chBuffer, '\0', sizeof(chBuffer));
+    iBufLenght = sizeof(chBuffer);
+    if (Tool_GetDataFromAppenedInfo( pResult->pcAppendInfo, "StructCarType", chBuffer, &iBufLenght ))
+    {
+        if(strstr(chBuffer, "»õ"))
+        {
+            pResult->iVehClassType = 2;
+        }
+        else
+        {
+            pResult->iVehClassType = 1;
+        }
+    }
+
 }
 
 void Camera6467_plate::SetResultCallbackFunc(void *pUserData, void *pFunc)

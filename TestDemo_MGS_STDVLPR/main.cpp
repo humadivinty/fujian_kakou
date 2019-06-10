@@ -41,10 +41,10 @@ int main(int argc, char *argv[])
             case '9':
                 GetDeviceStatus();
                 break;
-            case '10':
+            case 'a':
                 GetDeviceStatusMessage();
                 break;
-            case '11':
+            case 'b':
                 GetDeviceVersion();
                 break;
             case 'q':

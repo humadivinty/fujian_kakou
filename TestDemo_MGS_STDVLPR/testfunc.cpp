@@ -17,7 +17,7 @@ bool g_bExit = false;
 
 int g_iCameraID = 0;
 
-int  g_fStdVLPRRegResultCallback(int camID ,mgs_stdvlpr_info* info,void*  userData)
+static int  g_fStdVLPRRegResultCallback(int camID ,mgs_stdvlpr_info* info,void*  userData)
 {
     printf("fStdVLPRRegResultCallback begin.. camera handle = %d, info = %p, userData = %p \n", camID, info, userData);
     if(info == NULL)
@@ -39,7 +39,7 @@ int  g_fStdVLPRRegResultCallback(int camID ,mgs_stdvlpr_info* info,void*  userDa
     return 0;
 }
 
-int g_fStdVLPRDevStatusCallback(int camHandle ,int status, void* userData)
+static int g_fStdVLPRDevStatusCallback(int camHandle ,int status, void* userData)
 {
     printf("fStdVLPRDevStatusCallback : camera handle = %d, status = %d, userData = %p \n", camHandle, status, userData);
     return 0;
@@ -60,8 +60,8 @@ void  printf_menu()
     strcat(szMenu, "7 MGS_STDVLPR_ManualSnap, take capture.\n");
     strcat(szMenu, "8 MGS_STDVLPR_SetNTPInfo, synTime.\n");
     strcat(szMenu, "9 MGS_STDVLPR_GetStatus\n");
-    strcat(szMenu, "10 MGS_STDVLPR_GetStatusMsg\n");
-    strcat(szMenu, "11 MGS_STDVLPR_GetVersion\n");
+    strcat(szMenu, "a MGS_STDVLPR_GetStatusMsg\n");
+    strcat(szMenu, "b MGS_STDVLPR_GetVersion\n");
     strcat(szMenu, "q 退出\n");
     strcat(szMenu, "********************************\n");
 
@@ -77,7 +77,7 @@ void InitCamera()
 
 void ConnectToCamera()
 {
-    printf("begin to connect to  camere , please input ip address first: .");
+    printf("begin to connect to  camere , please input ip address first: \n");
     char chIP[64] = {0};
     scanf("%s", chIP);
     chIP[63] = '\0';
@@ -87,7 +87,7 @@ void ConnectToCamera()
         printf("the input parameter %s is invalid. \n",chIP);
         return;
     }
-
+    printf("get the ip :%s \n", chIP);
     mgs_stdvlpr_dev_info info;
     memset(&info, 0, sizeof(info));
     sprintf(info.szDevIp, "%s", chIP );
@@ -172,7 +172,7 @@ void GetDeviceVersion()
     int iRet = MGS_STDVLPR_GetVersion(g_iCameraID, szHWVersion, iLength, szAPIVersion, sizeof(szAPIVersion));
     printf("MGS_STDVLPR_GetVersionfinish, iRet = %d, szHWVersion  = %s. szAPIVersion = %s \n",
            iRet,
-           iLength,
+           szHWVersion,
           szAPIVersion );
 }
 

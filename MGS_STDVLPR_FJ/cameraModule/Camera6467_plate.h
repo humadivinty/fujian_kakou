@@ -43,6 +43,10 @@ public:
     int GetSynTimeInterval();
 private:
     int AnalysisVelchType(const char* vehType);
+    bool AnalysisVelchBodyColor(const char* srcData, int& ColorShade, int& bodyColor);
+    int AnalysisFrontMode(const char* srcData );
+    int AnalysisPlateColorType(const char* srcData);
+
     void ReadConfig();
 
     void SetCheckThreadExit(bool  bExit);

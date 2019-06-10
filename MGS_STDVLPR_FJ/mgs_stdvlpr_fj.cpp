@@ -158,7 +158,7 @@ int MGS_STDVLPR_SetNTPInfo(int nHandle, mgs_stdvlpr_ntp_info *pNtpInfo)
     Camera6467_plate* pCamera = (Camera6467_plate*)DeviceListManager::GetInstance()->GetDeviceById(nHandle);
     if(pCamera)
     {
-        Tool_WriteFormatLog("find the camera %s, take capture.",  pCamera->GetCameraIP() );
+        Tool_WriteFormatLog("find the camera %s.",  pCamera->GetCameraIP() );
         pCamera->SetSynTimeInerval(pNtpInfo->nTimeInvl);
         Tool_WriteFormatLog("SetSynTimeInerval success.");
         iRetCode = ERROR_CODE_OK;
@@ -252,26 +252,30 @@ int MGS_STDVLPR_GetVersion(int nHandle, char *szHWVersion, int nHWVerMaxLen, cha
     Camera6467_plate* pCamera = (Camera6467_plate*)DeviceListManager::GetInstance()->GetDeviceById(nHandle);
     if(pCamera)
     {
-        Tool_WriteFormatLog("find the camera %s, take capture.",  pCamera->GetCameraIP() );
-        BasicInfo info;
-        if(pCamera->GetHardWareInfo(info))
-        {
-            Tool_WriteFormatLog("GetHardWareInfo success.");
-            iRetCode = ERROR_CODE_OK;
+        Tool_WriteFormatLog("find the camera %s",  pCamera->GetCameraIP() );
+//        BasicInfo info;
+//        if(pCamera->GetHardWareInfo(info))
+//        {
+//            Tool_WriteFormatLog("GetHardWareInfo success.");
+//            iRetCode = ERROR_CODE_OK;
 
-            memcpy(szHWVersion, info.szDevVersion, strlen(info.szDevVersion));
-            szHWVersion[strlen(info.szDevVersion)] = '\0';
+//            memcpy(szHWVersion, info.szDevVersion, strlen(info.szDevVersion));
+//            szHWVersion[strlen(info.szDevVersion)] = '\0';
 
-            sprintf(szAPIVersion, "%s", DLL_VERSION);
-            Tool_WriteFormatLog("szHWVersion = %s,szAPIVersion = %s ",szHWVersion, szAPIVersion );
-        }
-        else
-        {
-            Tool_WriteFormatLog("take capture failed.");
-            sprintf(szAPIVersion, "%s", DLL_VERSION);
+//            sprintf(szAPIVersion, "%s", DLL_VERSION);
+//            Tool_WriteFormatLog("szHWVersion = %s,szAPIVersion = %s ",szHWVersion, szAPIVersion );
+//        }
+//        else
+//        {
+//            Tool_WriteFormatLog("GetHardWareInfo failed.");
+//            sprintf(szAPIVersion, "%s", DLL_VERSION);
 
-            iRetCode = ERROR_CODE_NO_RESPONSE;
-        }
+//            iRetCode = ERROR_CODE_NO_RESPONSE;
+//        }
+
+        sprintf(szHWVersion, "PCC");
+        sprintf(szAPIVersion, "%s", DLL_VERSION);
+        Tool_WriteFormatLog("szHWVersion = %s,szAPIVersion = %s ",szHWVersion, szAPIVersion );
     }
     else
     {

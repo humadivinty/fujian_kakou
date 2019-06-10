@@ -115,6 +115,7 @@ CameraResult::CameraResult()
     fVehWidth = 0.0;
     fConfidenceLevel = 0.0;
 	bBackUpVeh = false;		//ÊÇ·ñµ¹³µ
+    bFrontMode = true;
 
 	//pcAppendInfo = NULL;
 	//for (unsigned int i = 0; i < sizeof(pcAppendInfo); i++)
@@ -150,6 +151,7 @@ CameraResult::CameraResult( const CameraResult& CaRESULT )
 	iPlateColor = CaRESULT.iPlateColor;
 	iVehTypeNo = CaRESULT.iVehTypeNo;
     iVehSizeType = CaRESULT.iVehSizeType;
+    iVehClassType = CaRESULT.iVehClassType;
 	iDirection = CaRESULT.iDirection;
 	iAreaNo = CaRESULT.iAreaNo;
 	iVehBodyColorNo = CaRESULT.iVehBodyColorNo;
@@ -171,6 +173,7 @@ CameraResult::CameraResult( const CameraResult& CaRESULT )
 	fDistanceBetweenAxles = CaRESULT.fDistanceBetweenAxles;
     fConfidenceLevel = CaRESULT.fConfidenceLevel;
 	bBackUpVeh = CaRESULT.bBackUpVeh;
+    bFrontMode = CaRESULT.bFrontMode;
 
 	//pcAppendInfo = NULL;
     //strAppendInfo = CaRESULT.strAppendInfo;
@@ -396,6 +399,7 @@ CameraResult& CameraResult::operator=(const CameraResult& CaRESULT)
 	iLaneNo = CaRESULT.iLaneNo;
 	iPlateColor = CaRESULT.iPlateColor;
 	iVehTypeNo = CaRESULT.iVehTypeNo;
+    iVehClassType = CaRESULT.iVehClassType;
     iVehSizeType = CaRESULT.iVehSizeType;
 	iDirection = CaRESULT.iDirection;
 	iAreaNo = CaRESULT.iAreaNo;
@@ -418,6 +422,7 @@ CameraResult& CameraResult::operator=(const CameraResult& CaRESULT)
 	fDistanceBetweenAxles = CaRESULT.fDistanceBetweenAxles;
     fConfidenceLevel = CaRESULT.fConfidenceLevel;
 	bBackUpVeh = CaRESULT.bBackUpVeh;
+    bFrontMode = CaRESULT.bFrontMode;
 
 	//pcAppendInfo = NULL;
     //strAppendInfo = CaRESULT.strAppendInfo;
